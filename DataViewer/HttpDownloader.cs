@@ -49,6 +49,7 @@ namespace DataViewer
             _actorRef.Tell(new HttpResult<Stream>() { FailedMessage = $"[{nameof(StreamReceiver)}] Stream total length was, {_stream.Length}" });
 
             _stream.Close();
+            Self.Tell(PoisonPill.Instance);
         }
     }
 
@@ -109,7 +110,6 @@ namespace DataViewer
             {
                 var message = $"{result.StatusCode}, {result.Uri} -> ${result.FailedMessage}";
                 _originalSender.Tell(message);
-                Sender.Tell(PoisonPill.Instance);
             });
         }
     }
