@@ -6,7 +6,6 @@ namespace DataViewer.Actors
 {
     public class StreamReceiver : ReceiveActor
     {
-        private const int _bufferSize = 4096;
         private readonly ILoggingAdapter _logger = Context.GetLogger();
         private int _total = 0;
 
