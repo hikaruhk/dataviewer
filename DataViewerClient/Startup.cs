@@ -1,22 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Routing;
-using Autofac;
-using Autofac.Extensions.DependencyInjection;
-using DataViewer;
-using DataViewer.Messages;
+using Akka.Streams;
+using DataViewer.Actors;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using System.Net.Http;
 
 namespace DataViewerClient
 {
@@ -37,11 +27,12 @@ namespace DataViewerClient
             services.AddSingleton(_ => ActorSystem.Create("dataviewer"));
             services.AddSingleton(provider =>
             {
+                var actorSystem = provider.GetRequiredService<ActorSystem>();
+                var materializer = actorSystem.Materializer(namePrefix: "httpMaterializer");
                 var clientFactory = provider.GetService<IHttpClientFactory>();
-                var actor = provider
-                    .GetRequiredService<ActorSystem>()
+                var actor = actorSystem
                     .ActorOf(
-                        HttpDownloader.GetProp(clientFactory),
+                        HttpDownloader.GetProp(materializer, clientFactory),
                         "httpDownloaderActor");
 
                 return actor;
@@ -68,10 +59,5 @@ namespace DataViewerClient
             life.ApplicationStopping.Register(
                 () => app.ApplicationServices.GetService<ActorSystem>().Terminate().Wait());
         }
-    }
-
-    public static class ActorProviders
-    {
-        public delegate IActorRef HttpDownloaderProvider();
     }
 }
